@@ -215,7 +215,7 @@ Do not mechanically preserve the old Python package namespace if it creates a de
 | Cycle documentation copied | VERIFIED — 9 original cycle docs plus 6 split/ownership docs (strategic plan, status ledger, Gateway contract, CI pipeline record, auditor protocol, repository boundaries) |
 | Cycle tests copied | VERIFIED — 25 retained tests; API-only `test_ci_webhook_ingress.py` excluded after CI identified its dependency on `api/index.py` |
 | Package metadata and README added | VERIFIED |
-| Independent unit-test workflow added | VERIFIED — first run exposed the API-only test classification issue; rerun pending |
+| Independent unit-test workflow added | VERIFIED — latest fresh Motocicl Actions run `44558523021` completed successfully; 227 tests passed |
 | Legacy operational workflows/history | INTENTIONALLY NOT MIGRATED — Motocicl uses a fresh build/CI history; no legacy schedule or cross-repository workflow assumptions copied |
 | Legacy Gemini registry workflows | INTENTIONALLY NOT MIGRATED — rebuild only if a future Motocicl requirement calls for them |
 | `verify_supabase_integration.py` | REVIEW_REQUIRED — conditional item not copied pending read-only/live-side-effect audit |
