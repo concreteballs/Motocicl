@@ -7,6 +7,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass, field
 import re
+import threading
 from typing import Callable, Mapping, Protocol, Sequence
 
 
@@ -216,6 +217,41 @@ class TaskContext:
         )
 
 
+class _LeaseHeartbeat:
+    """Renew a task lease while its synchronous handler is executing."""
+
+    def __init__(self, context: TaskContext, interval_seconds: float) -> None:
+        if interval_seconds <= 0:
+            raise ValueError("heartbeat interval must be positive")
+        self.context = context
+        self.interval_seconds = interval_seconds
+        self._stop = threading.Event()
+        self._thread: threading.Thread | None = None
+        self.lease_lost = False
+
+    def start(self) -> None:
+        self._thread = threading.Thread(
+            target=self._run, name=f"lease-heartbeat-{self.context.task_id}", daemon=True
+        )
+        self._thread.start()
+
+    def _run(self) -> None:
+        while not self._stop.wait(self.interval_seconds):
+            try:
+                renewed = self.context.renew_lease()
+            except Exception:
+                renewed = False
+            if not renewed:
+                self.lease_lost = True
+                self._stop.set()
+                return
+
+    def stop(self) -> None:
+        self._stop.set()
+        if self._thread is not None:
+            self._thread.join(timeout=max(1.0, self.interval_seconds + 0.5))
+
+
 TaskHandler = Callable[[dict, TaskContext], TaskExecutionResult]
 ReconciliationHandler = Callable[
     [dict, list[dict], list[dict], TaskContext],
@@ -242,6 +278,7 @@ class WorkerRunner:
         lease_seconds: int = 300,
         recovery_limit: int = 100,
         allowed_task_types: list[str] | None = None,
+        heartbeat_interval_seconds: float | None = None,
     ) -> None:
         if not isinstance(worker_id, str) or not worker_id.strip():
             raise ValueError("worker_id is required")
@@ -278,6 +315,12 @@ class WorkerRunner:
         self.lease_seconds = lease_seconds
         self.recovery_limit = recovery_limit
         self.allowed_task_types = list(allowed_task_types) if allowed_task_types is not None else None
+        self.heartbeat_interval_seconds = (
+            float(heartbeat_interval_seconds) if heartbeat_interval_seconds is not None
+            else max(1.0, lease_seconds / 3)
+        )
+        if self.heartbeat_interval_seconds <= 0:
+            raise ValueError("heartbeat_interval_seconds must be positive")
 
     def run_once(self) -> dict:
         """Run recovery and process no more than one task; never loops in background."""
@@ -340,22 +383,40 @@ class WorkerRunner:
                         "reason": "invalid_council_resume_checkpoint",
                         "recovery": recovery,
                     }
+        heartbeat = _LeaseHeartbeat(context, self.heartbeat_interval_seconds)
+        heartbeat.start()
+        handler_error = None
+        decision = None
         try:
             decision = handler(task, context)
             if not isinstance(decision, TaskExecutionResult):
                 raise TypeError("handler_must_return_TaskExecutionResult")
         except Exception as exc:
+            handler_error = exc
+        finally:
+            heartbeat.stop()
+
+        # Once renewal fails, this process must not mutate the task state.
+        # The current lease owner (or expiry recovery) is responsible for it.
+        if heartbeat.lease_lost:
+            return {
+                "status": "lease_lost",
+                "task_id": task_id,
+                "reason": "heartbeat_renewal_failed",
+                "recovery": recovery,
+            }
+        if handler_error is not None:
             state = self.store.fail_task(
                 task_id,
                 self.worker_id,
-                "handler_exception:" + type(exc).__name__,
+                "handler_exception:" + type(handler_error).__name__,
                 retry_delay_seconds=60,
             )
             return {
                 "status": state or "lease_lost",
                 "task_id": task_id,
                 "reason": "handler_exception",
-                "error_type": type(exc).__name__,
+                "error_type": type(handler_error).__name__,
                 "recovery": recovery,
             }
 
