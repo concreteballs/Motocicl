@@ -2,6 +2,7 @@ import unittest
 import time
 
 from motocicl.automation.worker import (
+    ProviderReconciliationDecision,
     TaskExecutionResult,
     WorkerRunner,
 )
@@ -239,6 +240,75 @@ class WorkerRunnerTests(unittest.TestCase):
         self.assertEqual(result["reason"], "heartbeat_renewal_failed")
         self.assertNotIn(("complete", 7, "worker-a"), store.calls)
         self.assertFalse(any(call[0] in {"fail", "block"} for call in store.calls))
+
+    def test_reconciliation_handler_automatically_renews_lease(self):
+        class ReconciliationStore(FakeStore):
+            def claim_next_reconciliation_task(self, worker_id, lease_seconds=300):
+                self.calls.append(("claim_reconciliation", worker_id, lease_seconds))
+                return self.task
+
+            def list_unknown_provider_requests(self, task_id, worker_id, lease_seconds=300):
+                self.calls.append(("list_unknown", task_id))
+                return [{"reservation_id": "reservation-1"}]
+
+            def list_recovered_provider_results(self, task_id, worker_id, lease_seconds=300):
+                self.calls.append(("list_recovered", task_id))
+                return []
+
+            def resolve_unknown_provider_request(self, task_id, worker_id, reservation_id, **kwargs):
+                self.calls.append(("resolve", task_id, reservation_id))
+                return {"remaining_unknown_requests": 0}
+
+        store = ReconciliationStore(self.task())
+
+        def reconcile(task, unknown, recovered, context):
+            time.sleep(0.06)
+            return [ProviderReconciliationDecision(
+                reservation_id="reservation-1",
+                outcome="provider_not_found",
+                evidence_ref="audit://provider-check-1",
+            )]
+
+        result = WorkerRunner(
+            store, worker_id="worker-a", handlers={},
+            reconciliation_handler=reconcile, heartbeat_interval_seconds=0.01,
+        ).run_once()
+        self.assertEqual(result["status"], "reconciled")
+        self.assertGreaterEqual(
+            len([call for call in store.calls if call[0] == "renew"]), 2
+        )
+        self.assertIn(("resolve", 7, "reservation-1"), store.calls)
+        self.assertFalse(any(call[0] == "block" for call in store.calls))
+
+    def test_reconciliation_does_not_resolve_after_heartbeat_lease_loss(self):
+        class ReconciliationStore(FakeStore):
+            def claim_next_reconciliation_task(self, worker_id, lease_seconds=300):
+                return self.task
+
+            def list_unknown_provider_requests(self, task_id, worker_id, lease_seconds=300):
+                return [{"reservation_id": "reservation-1"}]
+
+            def list_recovered_provider_results(self, task_id, worker_id, lease_seconds=300):
+                return []
+
+            def resolve_unknown_provider_request(self, task_id, worker_id, reservation_id, **kwargs):
+                self.calls.append(("resolve", task_id, reservation_id))
+                return {"remaining_unknown_requests": 0}
+
+        store = ReconciliationStore(self.task())
+        store.lease_ok = False
+
+        def reconcile(task, unknown, recovered, context):
+            time.sleep(0.04)
+            return []
+
+        result = WorkerRunner(
+            store, worker_id="worker-a", handlers={},
+            reconciliation_handler=reconcile, heartbeat_interval_seconds=0.01,
+        ).run_once()
+        self.assertEqual(result["status"], "lease_lost")
+        self.assertEqual(result["reason"], "heartbeat_renewal_failed")
+        self.assertFalse(any(call[0] in {"resolve", "block"} for call in store.calls))
 
     def test_invalid_retry_delay_is_rejected(self):
         with self.assertRaises(ValueError):
