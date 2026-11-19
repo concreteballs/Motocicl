@@ -249,7 +249,8 @@ class _LeaseHeartbeat:
     def stop(self) -> None:
         self._stop.set()
         if self._thread is not None:
-            self._thread.join(timeout=max(1.0, self.interval_seconds + 0.5))
+            # Do not race final task completion against an in-flight renewal.
+            self._thread.join()
 
 
 TaskHandler = Callable[[dict, TaskContext], TaskExecutionResult]
