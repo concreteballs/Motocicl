@@ -6,6 +6,15 @@ Engineering Core remains the owner of specialist engineering disciplines and sol
 
 The Python package is `motocicl` under `src/`; the extracted runtime lives in `motocicl.automation`.
 
+## Documentation
+
+- [Repository ownership boundaries](docs/REPOSITORY_BOUNDARIES.md)
+- [Strategic autonomous-cycle plan](docs/STRATEGIC_AUTONOMOUS_CYCLE_PLAN.md)
+- [Detailed autonomous-cycle roadmap](docs/AUTONOMOUS_ENGINEERING_CYCLE_AND_MASTER_ROADMAP.md)
+- [Cycle implementation status and historical evidence](docs/CYCLE_IMPLEMENTATION_STATUS.md)
+- [Engineering Core ↔ Council Gateway contract](docs/ENGINEERING_CORE_COUNCIL_GATEWAY_INTEGRATION_RU.md)
+- [Repository split and migration ledger](REPOSITORY_SPLIT_PLAN.md)
+
 ## Safety and maturity
 
 - Extracted files are a migration baseline, not proof of a live autonomous deployment.
