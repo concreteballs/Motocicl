@@ -19,7 +19,7 @@ CREATE TABLE IF NOT EXISTS public.yj64_ci_fix_proposals (
     review_note TEXT
 );
 
-DO $
+DO $$
 BEGIN
     IF NOT EXISTS (
         SELECT 1 FROM pg_constraint
@@ -34,7 +34,7 @@ BEGIN
                 AND proposal_json->'implementation'->>'patch_ready' = 'false'
             );
     END IF;
-END $;
+END $$;
 
 CREATE INDEX IF NOT EXISTS yj64_ci_fix_proposals_status_idx
     ON public.yj64_ci_fix_proposals(proposal_status, created_at DESC);
