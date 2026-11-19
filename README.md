@@ -11,7 +11,7 @@ The Python package is `motocicl` under `src/`; the extracted runtime lives in `m
 - Extracted files are a migration baseline, not proof of a live autonomous deployment.
 - Database migrations are stored as source files only; they have not been applied.
 - Provider and database credentials must be configured as environment/repository secrets. Never commit secret values.
-- Operational GitHub workflows remain disabled/not copied until repository scope, permissions and secrets are reviewed for Motocicl.
+- Legacy Engineering Core workflow YAML and workflow-run history are intentionally not migrated. Motocicl starts a fresh build/CI history; any future automation should be designed for this repository from current requirements, permissions and secrets.
 - See [REPOSITORY_SPLIT_PLAN.md](REPOSITORY_SPLIT_PLAN.md) for ownership, migration ledger and remaining review items.
 
 ## Development
