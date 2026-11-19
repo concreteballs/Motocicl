@@ -224,6 +224,29 @@ class WorkerRunnerTests(unittest.TestCase):
         self.assertGreaterEqual(len(renewals), 2)
         self.assertIn(("complete", 7, "worker-a"), store.calls)
 
+    def test_handler_can_observe_lease_loss_and_stop_cooperatively(self):
+        store = FakeStore(self.task())
+        store.lease_ok = False
+        observed = {}
+
+        def handler(task, context):
+            deadline = time.monotonic() + 1
+            while time.monotonic() < deadline:
+                if context.lease_lost:
+                    observed["lost"] = True
+                    context.raise_if_lease_lost()
+                time.sleep(0.005)
+            return TaskExecutionResult("completed")
+
+        result = WorkerRunner(
+            store, worker_id="worker-a", handlers={"demo": handler},
+            heartbeat_interval_seconds=0.01,
+        ).run_once()
+        self.assertEqual(result["status"], "lease_lost")
+        self.assertTrue(observed.get("lost"))
+        self.assertNotIn(("complete", 7, "worker-a"), store.calls)
+        self.assertFalse(any(call[0] in {"fail", "block"} for call in store.calls))
+
     def test_runner_does_not_mutate_task_after_heartbeat_reports_lease_lost(self):
         store = FakeStore(self.task())
         store.lease_ok = False
