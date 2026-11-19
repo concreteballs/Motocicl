@@ -222,7 +222,7 @@ The first file-copy pass is committed to `main` in Motocicl. The extracted desti
 
 The source snapshot used for extraction was `YJ64-Engineering-Core@5161d41922c87b3cad3223ae8d71d3db4b653ec6`. Source files remain present and untouched.
 
-The first Motocicl Actions test run installed the package successfully but failed test collection because `tests/test_ci_webhook_ingress.py` imports the Engineering Core serverless API at `api/index.py`. That test has been removed from the destination test set; a clean rerun is required before declaring the migrated suite passing.
+The first Motocicl Actions test run installed the package successfully but failed collection because `tests/test_ci_webhook_ingress.py` imports the Engineering Core serverless API at `api/index.py`. That API-only test was removed from Motocicl and remains in Engineering Core. The subsequent clean GitHub Actions run completed successfully: **227 passed in 0.54s**.
 
 The operational workflows are deliberately not enabled until their event triggers and repository targets are redesigned. A `workflow_run` trigger in Motocicl cannot observe a workflow running in a different repository merely by copying the YAML. The existing workflows therefore remain in Engineering Core pending an explicit cross-repository event transport design and Motocicl-specific secret/permission configuration.
 
