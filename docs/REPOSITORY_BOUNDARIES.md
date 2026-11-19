@@ -1,4 +1,4 @@
-# Repository boundaries — Motocyсl
+# Repository boundaries — Motocicl
 
 ## Motocicl owns
 
