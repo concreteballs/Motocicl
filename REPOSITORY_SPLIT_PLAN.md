@@ -209,11 +209,11 @@ Do not mechanically preserve the old Python package namespace if it creates a de
 | Engineering Core boundary notice added (EN/RU) | VERIFIED |
 | Cycle runtime modules copied | VERIFIED — 18 files under `src/motocicl/automation` |
 | Shared observability contract copied | VERIFIED — 2 files under `src/motocicl/observability` |
-| Cycle operational scripts copied | VERIFIED — 5 scripts |
+| Cycle operational scripts copied | VERIFIED — 6 scripts, including the resolved Supabase integration smoke check |
 | Cycle database migrations copied | VERIFIED — 20 ordered SQL files; **not applied** |
 | Browser-agent envelope schema copied | VERIFIED — 1 schema |
 | Cycle documentation copied | VERIFIED — 9 original cycle docs plus 6 split/ownership docs (strategic plan, status ledger, Gateway contract, CI pipeline record, auditor protocol, repository boundaries) |
-| Cycle tests copied | VERIFIED — 25 retained tests; API-only `test_ci_webhook_ingress.py` excluded after CI identified its dependency on `api/index.py` |
+| Cycle tests copied | VERIFIED — 25 extracted tests plus 1 new Supabase smoke-script preflight test; API-only `test_ci_webhook_ingress.py` excluded after CI identified its dependency on `api/index.py` |
 | Package metadata and README added | VERIFIED |
 | Independent unit-test workflow added | VERIFIED — latest fresh Motocicl Actions run `44558523021` completed successfully; 227 tests passed |
 | Legacy operational workflows/history | INTENTIONALLY NOT MIGRATED — Motocicl uses a fresh build/CI history; no legacy schedule or cross-repository workflow assumptions copied |
