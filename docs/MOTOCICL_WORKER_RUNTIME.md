@@ -72,8 +72,11 @@ The current PostgreSQL claim path has durable recovery behavior at the SQL level
 
 Important remaining gaps:
 
-- Lease renewal is exposed through `TaskContext.renew_lease()`, but `WorkerRunner` does not renew automatically while a handler is running. The current CI handlers do not call it. A handler or provider operation lasting longer than the configured lease can therefore lose ownership and become eligible for another worker to claim.
-- Existing tests verify handler-invoked renewal and checkpoint continuation using fakes; they do not execute a real PostgreSQL kill/restart or concurrent-claim scenario.
-- The current runtime loop stops between task iterations. A SIGTERM received during a handler sets the stop flag but does not interrupt that handler or persist an explicit shutdown checkpoint.
+- The runner now starts a background lease heartbeat for ordinary task handlers, renewing at one third of the configured lease interval. The heartbeat is stopped and joined before the runner performs the final task transition.
+- If renewal returns false or raises an error, the runner reports `lease_lost` and does not complete, fail, or block the task under stale ownership.
+- Unit tests cover repeated automatic renewal during a long handler and the lease-loss path. GitHub Actions runs 35 and 36 passed; run 37 validates the follow-up synchronization fix.
+- Lease-loss detection does not forcibly interrupt a synchronous handler. That handler may continue until it returns, so handlers must still use bounded provider timeouts and idempotent side effects. Reconciliation handlers are not yet wrapped by this heartbeat.
+- Existing tests still use fake stores; they do not execute a real PostgreSQL kill/restart or concurrent-claim scenario.
+- The runtime loop stops between task iterations. A SIGTERM received during a handler sets the stop flag but does not interrupt that handler or persist an explicit shutdown checkpoint.
 
-Acceptance status: database-backed restart recovery and safe long-running lease maintenance are **not yet verified**. Do not treat the current worker as restart-safe for arbitrary-duration handlers until heartbeat/lease-loss handling and PostgreSQL integration tests are implemented.
+Acceptance status: automatic lease renewal is implemented and unit-tested for ordinary handlers. Database-backed restart recovery, real concurrent claims, and heartbeat coverage for reconciliation handlers remain **unverified**. Do not treat the worker as fully restart-safe for arbitrary-duration or side-effecting handlers.
