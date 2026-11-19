@@ -218,8 +218,8 @@ Do not mechanically preserve the old Python package namespace if it creates a de
 | Independent unit-test workflow added | VERIFIED — latest fresh Motocicl Actions run `44558523021` completed successfully; 227 tests passed |
 | Legacy operational workflows/history | INTENTIONALLY NOT MIGRATED — Motocicl uses a fresh build/CI history; no legacy schedule or cross-repository workflow assumptions copied |
 | Legacy Gemini registry workflows | INTENTIONALLY NOT MIGRATED — rebuild only if a future Motocicl requirement calls for them |
-| `verify_supabase_integration.py` | REVIEW_REQUIRED — conditional item not copied pending read-only/live-side-effect audit |
-| `council-api-v1.schema.json` | REVIEW_REQUIRED — contract ownership/deployed API compatibility not resolved |
+| `verify_supabase_integration.py` | RESOLVED — confirmed cycle-owned; copied to `Motocicl/scripts/verify_supabase_integration.py` with package/repository identifiers adapted; Engineering Core source preserved; live smoke test not executed |
+| `council-api-v1.schema.json` | RESOLVED — canonical versioned contract owned by Motocicl; Engineering Core retains a marked compatibility snapshot; YJ-64 application remains owner of the Council service implementation. See `docs/EXTRACTION_REVIEW_RESOLUTIONS.md` |
 | Mixed Council Gateway / strategic docs | VERIFIED — cycle stage and TЗ B extracted; Engineering Core retains discipline roadmap and Gateway client details |
 | Source repository implementation files | PRESERVED — no source code deleted; cycle-owned source documentation converted to boundary pointers, with full content retained in Motocicl and Git history |
 | Database, secrets and deployment | UNCHANGED — no migration execution, DB writes, secret edits or deployment |
