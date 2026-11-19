@@ -14,6 +14,8 @@ The Python package is `motocicl` under `src/`; the extracted runtime lives in `m
 - [Cycle implementation status and historical evidence](docs/CYCLE_IMPLEMENTATION_STATUS.md)
 - [Engineering Core ↔ Council Gateway contract](docs/ENGINEERING_CORE_COUNCIL_GATEWAY_INTEGRATION_RU.md)
 - [Repository split and migration ledger](REPOSITORY_SPLIT_PLAN.md)
+- [Council API v1 canonical schema](schemas/council-api-v1.schema.json)
+- [Resolved extraction reviews](docs/EXTRACTION_REVIEW_RESOLUTIONS.md)
 
 ## Safety and maturity
 
