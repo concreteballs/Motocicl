@@ -59,3 +59,21 @@ Before production deployment:
 6. Approve the paid Background Worker instance and resource budget separately.
 
 This runtime is a deployable foundation for the currently implemented CI-proposal worker tasks. It is **not** evidence that the complete autonomous engineering cycle is operational.
+
+## Recovery and lease audit — 2026-11-19
+
+The current PostgreSQL claim path has durable recovery behavior at the SQL level:
+
+- Claims are serialized with `FOR UPDATE SKIP LOCKED`; a new worker can reclaim an expired `running` task while its attempt budget remains.
+- The claim returns the latest checkpoint and verifies its integrity before the handler receives the task.
+- Expired tasks with provider reservations in `sending` or `accepted` are quarantined as `unknown` and blocked for reconciliation rather than blindly replayed.
+- Expired tasks at their final attempt become terminal failures.
+- Checkpoint writes and lease renewal require the current owner and a lease that has not already expired.
+
+Important remaining gaps:
+
+- Lease renewal is exposed through `TaskContext.renew_lease()`, but `WorkerRunner` does not renew automatically while a handler is running. The current CI handlers do not call it. A handler or provider operation lasting longer than the configured lease can therefore lose ownership and become eligible for another worker to claim.
+- Existing tests verify handler-invoked renewal and checkpoint continuation using fakes; they do not execute a real PostgreSQL kill/restart or concurrent-claim scenario.
+- The current runtime loop stops between task iterations. A SIGTERM received during a handler sets the stop flag but does not interrupt that handler or persist an explicit shutdown checkpoint.
+
+Acceptance status: database-backed restart recovery and safe long-running lease maintenance are **not yet verified**. Do not treat the current worker as restart-safe for arbitrary-duration handlers until heartbeat/lease-loss handling and PostgreSQL integration tests are implemented.
