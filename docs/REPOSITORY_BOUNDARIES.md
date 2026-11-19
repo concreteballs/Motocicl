@@ -20,6 +20,8 @@ The YJ-64 application owns its internal Council engine, model routing, participa
 
 ## Shared contracts
 
+Motocicl owns the canonical, versioned cross-repository Council API contract in `schemas/council-api-v1.schema.json`. Engineering Core retains a compatibility snapshot for its narrow Gateway adapter; update the canonical schema first and synchronize the snapshot in the same coordinated change. The YJ-64 application owns and must implement the Council API service and internal Council engine; schema ownership does not transfer service ownership.
+
 Cross-disciplinary evidence, provenance, identity, task handoff and decision-integrity rules are shared interfaces. Motocicl enforces orchestration-level gates; Engineering Core must provide domain evidence and report limitations. A discipline passing its own checks is not by itself proof of whole-system acceptability.
 
 ## Documentation source of truth
