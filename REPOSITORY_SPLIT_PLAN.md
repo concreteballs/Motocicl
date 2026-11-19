@@ -107,7 +107,7 @@ The following files are retained in Engineering Core and are not part of the ext
 - `.github/workflows/discover-gemini-models.yml` (if still used by the cycle provider registry; verify before moving)
 - `.github/workflows/gemini-api-key-check.yml` (if still used by the cycle provider registry; verify before moving)
 
-Workflow permissions, repository allowlists, secret names, schedules and target branch must be reviewed for Motocicl. Do not copy source repository secrets or assume that destination secrets exist.
+This list is an archival inventory only. None of these workflows, schedules, triggers or secrets is to be ported as part of this split. Future automation, if needed, will be a separate Motocicl-native design.
 
 ### 3.3 Keep in Engineering Core — specialist integration adapter
 
