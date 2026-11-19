@@ -5,13 +5,30 @@ intentionally do not connect to Supabase or apply production migrations.
 """
 from __future__ import annotations
 
+import multiprocessing
 import os
 import threading
+import time
 import unittest
 import uuid
 from concurrent.futures import ThreadPoolExecutor
 
 DATABASE_URL = os.environ.get("MOTOCICL_TEST_DATABASE_URL")
+
+
+def _claim_then_hold(database_url, schema, send_connection):
+    import psycopg
+    from motocicl.automation.postgres_store import PostgresCycleStore
+
+    store = PostgresCycleStore(
+        database_url,
+        connect_factory=lambda url: psycopg.connect(
+            url, options=f"-c search_path={schema}"
+        ),
+    )
+    task = store.claim_next_task("crash-worker", lease_seconds=30)
+    send_connection.send(None if task is None else task["task_id"])
+    time.sleep(60)
 
 
 @unittest.skipUnless(DATABASE_URL, "MOTOCICL_TEST_DATABASE_URL is not configured")
@@ -122,6 +139,40 @@ class PostgresWorkerIntegrationTests(unittest.TestCase):
         self.assertEqual(reclaimed["attempts"], 2)
         self.assertFalse(self.store.renew_task_lease(task_id, "dead-worker", 30))
         self.assertTrue(self.store.renew_task_lease(task_id, "replacement-worker", 30))
+
+    def test_killed_worker_process_is_recovered_after_lease_expiry(self):
+        task_id = self.enqueue("killed-process")
+        context = multiprocessing.get_context("fork")
+        receiver, sender = context.Pipe(duplex=False)
+        process = context.Process(
+            target=_claim_then_hold,
+            args=(DATABASE_URL, self.schema, sender),
+        )
+        process.start()
+        sender.close()
+        try:
+            self.assertTrue(receiver.poll(10), "worker process did not claim a task")
+            self.assertEqual(receiver.recv(), task_id)
+            process.terminate()
+            process.join(timeout=5)
+            self.assertFalse(process.is_alive(), "terminated worker process did not exit")
+        finally:
+            if process.is_alive():
+                process.kill()
+                process.join(timeout=5)
+            receiver.close()
+
+        with self.connection() as conn:
+            conn.execute(
+                """UPDATE yj64_task_queue
+                   SET locked_at = now() - interval '90 seconds'
+                   WHERE task_id = %s AND lock_owner = 'crash-worker'""",
+                (task_id,),
+            )
+        recovered = self.store.claim_next_task("restarted-worker", lease_seconds=30)
+        self.assertEqual(recovered["task_id"], task_id)
+        self.assertEqual(recovered["attempts"], 2)
+        self.assertEqual(recovered["worker_id"], "restarted-worker")
 
     def test_expired_ambiguous_provider_send_is_quarantined_not_replayed(self):
         task_id = self.enqueue("ambiguous-send")
