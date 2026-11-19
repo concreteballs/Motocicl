@@ -72,7 +72,7 @@ The following inventory is based on the current source tree. During the actual m
   - `tests/test_ci_log_analysis.py`
   - `tests/test_ci_log_ingestion.py`
   - `tests/test_ci_patch_generation.py`
-  - `tests/test_ci_webhook_ingress.py`
+  - `tests/test_ci_webhook_ingress.py` — **REVIEW_REQUIRED / keep in Engineering Core**: this test exercises the serverless `api/index.py` webhook ingress, not the cycle worker package; it failed collection in Motocicl because that API file is not part of the cycle runtime.
   - `tests/test_direct_ci_persistence.py`
   - `tests/test_gemini_adapter.py`
   - `tests/test_mock_provider_integration.py`
@@ -197,20 +197,33 @@ Do not mechanically preserve the old Python package namespace if it creates a de
 | Item | Status |
 |---|---|
 | Destination repository created and accessible | VERIFIED |
-| Extraction plan committed to Motocicl | PENDING |
-| Engineering Core boundary notice added (EN/RU) | PENDING |
-| Cycle source files copied | NOT STARTED |
-| Motocicl imports/package adapted | NOT STARTED |
-| Motocicl tests passing | NOT STARTED |
-| Cross-repository contract tests passing | NOT STARTED |
-| Live integration verified | NOT STARTED |
+| Extraction plan committed to Motocicl | VERIFIED |
+| Engineering Core boundary notice added (EN/RU) | VERIFIED |
+| Cycle runtime modules copied | VERIFIED — 18 files under `src/motocicl/automation` |
+| Shared observability contract copied | VERIFIED — 2 files under `src/motocicl/observability` |
+| Cycle operational scripts copied | VERIFIED — 5 scripts |
+| Cycle database migrations copied | VERIFIED — 20 ordered SQL files; **not applied** |
+| Browser-agent envelope schema copied | VERIFIED — 1 schema |
+| Cycle documentation copied | VERIFIED — 9 documents |
+| Cycle tests copied | VERIFIED — 25 retained tests; API-only `test_ci_webhook_ingress.py` excluded after CI identified its dependency on `api/index.py` |
+| Package metadata and README added | VERIFIED |
+| Independent unit-test workflow added | VERIFIED — first run exposed the API-only test classification issue; rerun pending |
+| Operational cycle workflows | REVIEW_REQUIRED — not copied/activated; triggers, repository scope and secrets must be rebuilt for Motocicl |
+| Gemini model-discovery/key-check workflows | REVIEW_REQUIRED — not copied/activated; inspect secret use and provider-registry ownership |
+| `verify_supabase_integration.py` | REVIEW_REQUIRED — conditional item not copied pending read-only/live-side-effect audit |
+| `council-api-v1.schema.json` | REVIEW_REQUIRED — contract ownership/deployed API compatibility not resolved |
+| Mixed Council Gateway / strategic docs | REVIEW_REQUIRED — not copied wholesale; split cycle service requirements from Engineering Core adapter instructions |
+| Source repository implementation files | PRESERVED — no source files deleted or modified during extraction |
+| Database, secrets and deployment | UNCHANGED — no migration execution, DB writes, secret edits or deployment |
 
-## 9. First acceptance gate
+## 9. First acceptance gate and current extraction result
 
-This planning stage is complete when:
-- this plan exists in Motocicl main;
-- the English and Russian Engineering Core roadmaps clearly direct cycle work to Motocicl;
-- all original roadmap content remains unchanged below the notice;
-- no source implementation files have been moved or deleted.
+The first file-copy pass is committed to `main` in Motocicl. The extracted destination currently contains 18 cycle runtime modules, 2 observability package files, 5 scripts, 20 migrations, 1 browser-agent schema, 9 cycle documents and 25 cycle tests. The API-only webhook ingress test remains in Engineering Core because it requires `api/index.py`.
 
-The next user instruction may authorize the file-copy stage. That stage must use this inventory as a checklist and report any items whose ownership requires clarification.
+The source snapshot used for extraction was `YJ64-Engineering-Core@5161d41922c87b3cad3223ae8d71d3db4b653ec6`. Source files remain present and untouched.
+
+The first Motocicl Actions test run installed the package successfully but failed test collection because `tests/test_ci_webhook_ingress.py` imports the Engineering Core serverless API at `api/index.py`. That test has been removed from the destination test set; a clean rerun is required before declaring the migrated suite passing.
+
+The operational workflows are deliberately not enabled until their event triggers and repository targets are redesigned. A `workflow_run` trigger in Motocicl cannot observe a workflow running in a different repository merely by copying the YAML. The existing workflows therefore remain in Engineering Core pending an explicit cross-repository event transport design and Motocicl-specific secret/permission configuration.
+
+No live integration, database migration, autonomous queue processing or deployment is claimed by this extraction.
