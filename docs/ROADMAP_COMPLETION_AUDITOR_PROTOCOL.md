@@ -1,8 +1,10 @@
 # YJ64 Roadmap Completion Auditor Protocol
 
 Status: Approved requirement for the Autonomous Engineering Cycle
-Repository: concreteballs/YJ64-Engineering-Core
-Branch: main
+Owner: concreteballs/Motocicl
+Target engineering repository: concreteballs/YJ64-Engineering-Core (main), plus Motocicl's own cycle roadmap and implementation ledger
+
+The auditor is operated by Motocicl. It may inspect external engineering repositories within explicit repository/branch permissions; it does not own or rewrite their domain requirements.
 
 ## Purpose
 On every cycle, independently audit the roadmap against the repository's current implementation so the cycle does not repeat work simply because a roadmap checkbox/status was not updated, or because an LLM incorrectly believes a task is unfinished or complete.
