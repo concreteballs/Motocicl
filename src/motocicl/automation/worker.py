@@ -102,6 +102,22 @@ class TaskContext:
     task_id: int
     worker_id: str
     lease_seconds: int
+    _lease_lost_event: threading.Event = field(
+        default_factory=threading.Event, init=False, compare=False, repr=False
+    )
+
+    @property
+    def lease_lost(self) -> bool:
+        """Whether the runner has detected that this handler no longer owns its lease."""
+        return self._lease_lost_event.is_set()
+
+    def raise_if_lease_lost(self) -> None:
+        """Cooperative cancellation point for long-running task handlers."""
+        if self.lease_lost:
+            raise RuntimeError("task_lease_lost")
+
+    def _signal_lease_lost(self) -> None:
+        self._lease_lost_event.set()
 
     def renew_lease(self) -> bool:
         return self.store.renew_task_lease(
@@ -243,6 +259,7 @@ class _LeaseHeartbeat:
                 renewed = False
             if not renewed:
                 self.lease_lost = True
+                self.context._signal_lease_lost()
                 self._stop.set()
                 return
 
