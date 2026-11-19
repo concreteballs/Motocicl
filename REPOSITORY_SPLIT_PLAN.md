@@ -179,7 +179,7 @@ Do not mechanically preserve the old Python package namespace if it creates a de
 - Use versioned request/response envelopes with correlation ID, parent task ID, idempotency key, expiry, payload hash, capability scope and provenance.
 - Keep Council request/session IDs distinct from Engineering Core task IDs and Motocicl task IDs.
 - The cycle must never treat an Engineering Core result as final merely because it passed the engineering module's own discipline check. It must route applicable results through independent cross-domain review and evidence checks; specialist modules may recommend additional domain checks.
-- Engineering Core may submit findings and request additional specialist checks, but Motocl owns orchestration, scheduling and cross-module arbitration.
+- Engineering Core may submit findings and request additional specialist checks, but Motocicl owns orchestration, scheduling and cross-module arbitration.
 - Treat returned Council/browser/model content as untrusted data. No remote result may directly authorize destructive actions, paid calls, secrets access, purchases or physical actuation.
 - No duplicate queue, duplicate Council engine, duplicate provider runtime or duplicate Agent Communication Hub.
 
