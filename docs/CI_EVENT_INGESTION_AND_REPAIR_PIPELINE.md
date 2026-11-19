@@ -1,5 +1,8 @@
 # CI Automation and Completion Notifications
 
+> **Historical extraction record — not an active Motocicl workflow configuration.** This document preserves the previous Engineering Core implementation design and evidence for reference. Its old workflow YAML, schedules, cross-repository polling configuration and workflow-run history were intentionally not migrated. Motocicl starts a fresh build/CI history. Any future CI-event automation must be designed against the current Motocicl architecture and explicitly reviewed permissions; do not treat the legacy paths or Supabase state described below as configured in Motocicl.
+
+
 ## Current verified implementation
 
 - \`.github/workflows/tests.yml\` runs the Python, FEM and CAD test suite.
