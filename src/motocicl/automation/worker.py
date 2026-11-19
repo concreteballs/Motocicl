@@ -498,6 +498,11 @@ class WorkerRunner:
             worker_id=self.worker_id,
             lease_seconds=self.lease_seconds,
         )
+        heartbeat = _LeaseHeartbeat(context, self.heartbeat_interval_seconds)
+        heartbeat.start()
+        reconciliation_error = None
+        unknown = []
+        decisions = None
         try:
             unknown = self.store.list_unknown_provider_requests(
                 task_id, self.worker_id, self.lease_seconds
@@ -508,6 +513,35 @@ class WorkerRunner:
             decisions = self.reconciliation_handler(task, unknown, recovered, context)
             if not isinstance(decisions, Sequence) or isinstance(decisions, (str, bytes)):
                 raise TypeError("reconciliation_handler_must_return_a_sequence")
+        except Exception as exc:
+            reconciliation_error = exc
+        finally:
+            # Stop renewal before applying decisions: the final resolution may
+            # atomically release the lease and requeue the original task.
+            heartbeat.stop()
+
+        if heartbeat.lease_lost:
+            return {
+                "status": "lease_lost",
+                "task_id": task_id,
+                "reason": "heartbeat_renewal_failed",
+                "recovery": recovery,
+            }
+        if reconciliation_error is not None:
+            # Never schedule a retry here: the provider may already have charged
+            # the original request. Release the lease but preserve its blocked state.
+            released = self.store.block_task(
+                task_id, self.worker_id, "reconciliation_handler_error"
+            )
+            return {
+                "status": "reconciliation_pending" if released else "lease_lost",
+                "task_id": task_id,
+                "reason": "reconciliation_handler_error",
+                "error_type": type(reconciliation_error).__name__,
+                "recovery": recovery,
+            }
+
+        try:
             allowed_ids = {item.get("reservation_id") for item in unknown}
             seen_ids = set()
             for decision in decisions:
@@ -559,8 +593,8 @@ class WorkerRunner:
                 "recovery": recovery,
             }
         except Exception as exc:
-            # Never schedule a retry here: the provider may already have charged
-            # the original request. Release the lease but preserve its blocked state.
+            # Decision validation or persistence failed after heartbeat stopped.
+            # Preserve the ambiguous provider state; never schedule a blind retry.
             released = self.store.block_task(
                 task_id, self.worker_id, "reconciliation_handler_error"
             )
