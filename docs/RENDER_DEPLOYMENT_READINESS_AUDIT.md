@@ -81,3 +81,34 @@ The current Motocicl workflow only installs the package and runs pytest. It does
 ## Change-control boundary
 
 No migrations were applied, no Supabase rows were changed, no secrets were created or edited, no queue jobs were submitted or requeued, and no Render service or paid resource was created.
+
+
+---
+
+## Addendum — runtime and container work (2026-11-19)
+
+The initial audit above is a point-in-time baseline. The following work was added afterwards:
+
+- `scripts/run_motocicl_worker.py` now provides a bounded long-running process around `WorkerRunner.run_once()`, including idle polling, SIGTERM/SIGINT handling, unique worker identity and an explicit allowlist.
+- The default runtime registers only the existing `prepare_ci_fix` review-proposal handler. The optional `generate_ci_patch` handler is disabled by default and guarded by an explicit zero-cost budget check. No repository patch is applied or committed.
+- `tests/test_long_running_worker.py` covers polling validation and clean stop behaviour.
+- A non-root Python 3.11 `Dockerfile` and CI container-build step have been added.
+- Runtime instructions are documented in [MOTOCICL_WORKER_RUNTIME.md](MOTOCICL_WORKER_RUNTIME.md).
+
+This removes the earlier "no long-running entrypoint" blocker **for the limited CI-proposal task set only**. It does not make the complete autonomous engineering cycle deployable.
+
+### Updated status
+
+| Area | Current status |
+|---|---|
+| Long-running process | Implemented for bounded task allowlist |
+| Graceful stop between task iterations | Implemented; task-interruption/lease-expiry E2E still untested |
+| Container definition | Added |
+| Unit tests for loop/shutdown | Added; GitHub Actions run #20 passed |
+| Container CI build | Added; build result pending at time of this addendum |
+| Concurrent worker integration against staging PostgreSQL | Not tested |
+| Full engineering-cycle task handlers | Incomplete |
+| Council Gateway E2E | Incomplete |
+| Render deployment | Not created; Background Worker requires paid instance |
+
+No live database, queue, secrets, Render service, paid resource or production setting was changed. The current runtime must not be described as a complete autonomous engineering-cycle worker.
