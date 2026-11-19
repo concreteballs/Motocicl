@@ -1,4 +1,5 @@
 import unittest
+import time
 
 from motocicl.automation.worker import (
     TaskExecutionResult,
@@ -205,6 +206,39 @@ class WorkerRunnerTests(unittest.TestCase):
         ).run_once()
         self.assertEqual(result["status"], "pending")
         self.assertEqual(result["error_type"], "TypeError")
+
+    def test_runner_automatically_renews_lease_during_long_handler(self):
+        store = FakeStore(self.task())
+
+        def handler(task, context):
+            time.sleep(0.06)
+            return TaskExecutionResult("completed")
+
+        result = WorkerRunner(
+            store, worker_id="worker-a", handlers={"demo": handler},
+            heartbeat_interval_seconds=0.01,
+        ).run_once()
+        self.assertEqual(result["status"], "completed")
+        renewals = [call for call in store.calls if call[0] == "renew"]
+        self.assertGreaterEqual(len(renewals), 2)
+        self.assertIn(("complete", 7, "worker-a"), store.calls)
+
+    def test_runner_does_not_mutate_task_after_heartbeat_reports_lease_lost(self):
+        store = FakeStore(self.task())
+        store.lease_ok = False
+
+        def handler(task, context):
+            time.sleep(0.04)
+            return TaskExecutionResult("completed")
+
+        result = WorkerRunner(
+            store, worker_id="worker-a", handlers={"demo": handler},
+            heartbeat_interval_seconds=0.01,
+        ).run_once()
+        self.assertEqual(result["status"], "lease_lost")
+        self.assertEqual(result["reason"], "heartbeat_renewal_failed")
+        self.assertNotIn(("complete", 7, "worker-a"), store.calls)
+        self.assertFalse(any(call[0] in {"fail", "block"} for call in store.calls))
 
     def test_invalid_retry_delay_is_rejected(self):
         with self.assertRaises(ValueError):
