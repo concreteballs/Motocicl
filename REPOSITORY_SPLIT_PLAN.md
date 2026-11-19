@@ -93,7 +93,11 @@ The following inventory is based on the current source tree. During the actual m
   - `tests/test_worker_reconciliation.py`
   - `tests/test_worker_runner.py`
 
-### 3.2 Move cycle workflows to Motocicl
+### 3.2 Legacy workflows — intentionally not migrated
+
+The previous Engineering Core workflow YAML and its workflow-run history are **not being ported or reconfigured**. Motocicl starts with a fresh build/CI history. Any future cycle automation will be designed as a new Motocicl-native workflow only when the cycle runtime requires it; do not reproduce old schedules, cross-repository polling or secret assumptions.
+
+The following files are retained in Engineering Core and are not part of the extraction:
 
 - `.github/workflows/notify-ci-completion.yml`
 - `.github/workflows/scheduled-ci-event-worker.yml`
@@ -126,9 +130,9 @@ These files are the Engineering Core-side adapter: submit an external Council re
 
 Keep all domain-specific code, tests and docs for engineering contracts, CAD, physics, materials, chemistry, economics, sourcing, vessel/yacht models, geometry, solvers and engineering project persistence. Keep the normal Engineering Core test workflow. Do not move files merely because they mention an agent or task; ownership is determined by responsibility.
 
-### 3.5 Documentation to relocate or split
+### 3.5 Documentation — split completed / ownership clarified
 
-Cycle-owned documentation should be copied into Motocicl, then links and ownership references should be updated only after the copy is verified:
+Cycle-owned documents were copied into Motocicl. Mixed documents were split by responsibility; Engineering Core retains concise boundary pointers or shared contracts rather than duplicate cycle execution instructions:
 - `docs/AUTONOMOUS_ENGINEERING_CYCLE_AND_MASTER_ROADMAP.md`
 - `docs/AUTONOMOUS_ENGINEERING_CYCLE_AND_MASTER_ROADMAP_RU.md`
 - `docs/SESSION_INDEPENDENCE_PROTOCOL.md`
@@ -136,14 +140,18 @@ Cycle-owned documentation should be copied into Motocicl, then links and ownersh
 - `docs/BROWSER_AGENT_FEEDBACK_BRIDGE_PLAN.md`
 - `docs/CONSENSUS_DECISION_INTEGRITY_AND_EVIDENCE_PLAN.md`
 - `docs/CONSENSUS_DECISION_INTEGRITY_AND_EVIDENCE_PLAN_RU.md`
-- `docs/COUNCIL_GATEWAY_IMPLEMENTATION_PLAN_RU.md` (review: split cycle-side requirements from Engineering adapter instructions)
+- `docs/COUNCIL_GATEWAY_IMPLEMENTATION_PLAN_RU.md` (cycle-side TЗ B extracted to `docs/ENGINEERING_CORE_COUNCIL_GATEWAY_INTEGRATION_RU.md`; Engineering Core retains Gateway client plan and a pointer)
 - `docs/MODEL_PROVIDER_LIMITS_AND_CHUNKED_INGESTION.md`
 - `docs/OBSERVABILITY_AND_DIAGNOSTICS_ARCHITECTURE.md`
-- `docs/STRATEGIC_MASTER_PLAN.md` (split mixed engineering/cycle sections; do not blindly move the whole file)
-- `docs/COUNCIL_GATEWAY_INTEGRATION.md` and `docs/COUNCIL_GATEWAY_INTEGRATION_RU.md` (split cycle API contract from Engineering-side client setup; keep adapter-specific instructions in Engineering Core)
-- `docs/YJ64-COUNCIL-INTEGRATION.md` (keep the Engineering Core adapter portion here; link to Motocicl for cycle service ownership)
+- `docs/STRATEGIC_MASTER_PLAN.md` (cycle stage extracted to `docs/STRATEGIC_AUTONOMOUS_CYCLE_PLAN.md`; Engineering Core strategic stages retained)
+- `docs/COUNCIL_GATEWAY_INTEGRATION.md` and `_RU.md` (Engineering Core client/result adapter details retained; cycle-side caller contract extracted to `docs/ENGINEERING_CORE_COUNCIL_GATEWAY_INTEGRATION_RU.md`)
+- `docs/YJ64-COUNCIL-INTEGRATION.md` (Engineering Core adapter portion retained with ownership pointer)
 
 Engineering-specific docs remain in Engineering Core. Mixed plans must be split by responsibility, not copied wholesale into both repositories.
+
+- `docs/CI_AUTOMATION_AND_NOTIFICATIONS.md` split: Engineering Core retains a short CI evidence-source description; the legacy cycle pipeline record is copied to `docs/CI_EVENT_INGESTION_AND_REPAIR_PIPELINE.md` with a historical/non-operational status note.
+- `docs/ROADMAP_COMPLETION_AUDITOR_PROTOCOL.md` moved to Motocicl; Engineering Core retains a navigation pointer.
+- `docs/IMPLEMENTATION_STATUS.md` split: cycle status sections moved to `docs/CYCLE_IMPLEMENTATION_STATUS.md`; engineering work-package status remains in Engineering Core.
 
 ## 4. Required destination layout (initial proposal)
 
@@ -166,7 +174,7 @@ Do not mechanically preserve the old Python package namespace if it creates a de
 3. Copy the approved cycle-owned files to Motocicl without deleting or editing their source copies.
 4. Create a minimal Motocicl package/configuration and adapt imports only where required; do not rewrite architecture during a file transfer.
 5. Copy and adapt the cycle docs, preserving English/Russian content and status qualifiers.
-6. Rebuild workflows with Motocicl repository permissions/secrets and explicit repository allowlists. Never grant access to Engineering Core unless specifically required and authorized.
+6. Do not port legacy workflows or workflow-run history. Start with Motocicl's fresh build/CI history; design any future event automation from current requirements, repository scope and explicit permissions.
 7. Run unit tests in Motocicl; verify migration order statically, but do not apply database migrations.
 8. Add contract tests proving Motocicl ↔ Engineering Core handoff, including request identity, parent task identity, suspend/resume semantics, result provenance and idempotency.
 9. Verify CI and exact commit runs. Do not claim live E2E or autonomous operation until real queue/model/CI/worker recovery acceptance tests pass.
@@ -204,16 +212,16 @@ Do not mechanically preserve the old Python package namespace if it creates a de
 | Cycle operational scripts copied | VERIFIED — 5 scripts |
 | Cycle database migrations copied | VERIFIED — 20 ordered SQL files; **not applied** |
 | Browser-agent envelope schema copied | VERIFIED — 1 schema |
-| Cycle documentation copied | VERIFIED — 9 documents |
+| Cycle documentation copied | VERIFIED — 9 original cycle docs plus 6 split/ownership docs (strategic plan, status ledger, Gateway contract, CI pipeline record, auditor protocol, repository boundaries) |
 | Cycle tests copied | VERIFIED — 25 retained tests; API-only `test_ci_webhook_ingress.py` excluded after CI identified its dependency on `api/index.py` |
 | Package metadata and README added | VERIFIED |
 | Independent unit-test workflow added | VERIFIED — first run exposed the API-only test classification issue; rerun pending |
-| Operational cycle workflows | REVIEW_REQUIRED — not copied/activated; triggers, repository scope and secrets must be rebuilt for Motocicl |
-| Gemini model-discovery/key-check workflows | REVIEW_REQUIRED — not copied/activated; inspect secret use and provider-registry ownership |
+| Legacy operational workflows/history | INTENTIONALLY NOT MIGRATED — Motocicl uses a fresh build/CI history; no legacy schedule or cross-repository workflow assumptions copied |
+| Legacy Gemini registry workflows | INTENTIONALLY NOT MIGRATED — rebuild only if a future Motocicl requirement calls for them |
 | `verify_supabase_integration.py` | REVIEW_REQUIRED — conditional item not copied pending read-only/live-side-effect audit |
 | `council-api-v1.schema.json` | REVIEW_REQUIRED — contract ownership/deployed API compatibility not resolved |
-| Mixed Council Gateway / strategic docs | REVIEW_REQUIRED — not copied wholesale; split cycle service requirements from Engineering Core adapter instructions |
-| Source repository implementation files | PRESERVED — no source files deleted or modified during extraction |
+| Mixed Council Gateway / strategic docs | VERIFIED — cycle stage and TЗ B extracted; Engineering Core retains discipline roadmap and Gateway client details |
+| Source repository implementation files | PRESERVED — no source code deleted; cycle-owned source documentation converted to boundary pointers, with full content retained in Motocicl and Git history |
 | Database, secrets and deployment | UNCHANGED — no migration execution, DB writes, secret edits or deployment |
 
 ## 9. First acceptance gate and current extraction result
