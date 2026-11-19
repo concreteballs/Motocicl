@@ -1,6 +1,6 @@
 # Motocicl — Repository Split and Cycle Extraction Plan
 
-**Status:** approved extraction plan; source migration not yet performed  
+**Status:** initial code extraction and documentation ownership split committed; remaining ambiguous interface items are explicitly listed in the migration ledger  
 **Destination repository:** https://github.com/concreteballs/Motocicl  
 **Destination branch:** `main`  
 **Source repository:** https://github.com/concreteballs/YJ64-Engineering-Core  
