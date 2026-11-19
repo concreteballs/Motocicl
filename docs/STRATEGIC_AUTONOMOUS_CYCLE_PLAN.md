@@ -21,10 +21,6 @@
 8. Require exact-commit CI validation before a task is marked complete or the next dependent task is started.
 9. Add bounded repair attempts, task/time/token/cost budgets, pause/resume/cancel, kill switch and safe blocked states.
 10. Add external notifications and a status view for active task, queue, last commit, CI result, next task, budget and stop reason.
-6. Make the worker read this strategic plan, the detailed roadmap and implementation ledger; select only the next unblocked task.
-7. Require exact-commit CI validation before a task is marked complete or the next dependent task is started.
-8. Add bounded repair attempts, task/time/token/cost budgets, pause/resume/cancel, kill switch and safe blocked states.
-9. Add external notifications and a status view for active task, queue, last commit, CI result, next task, budget and stop reason.
 
 ### Acceptance
 - A task is durably queued.
