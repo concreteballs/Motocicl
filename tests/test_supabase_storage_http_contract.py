@@ -63,7 +63,7 @@ class StorageContractHandler(BaseHTTPRequestHandler):
                 StorageContractHandler.forced_status,
                 b'{"message":"simulated storage failure"}',
             )
-        if not key.startswith("yj64-private-artifacts/":
+        if not key.startswith("yj64-private-artifacts/"):
             return self._send(404)
         payload = self.rfile.read(int(self.headers.get("Content-Length", "0")))
         if key in StorageContractHandler.objects:
@@ -162,8 +162,6 @@ class SupabaseStorageHttpContractTests(unittest.TestCase):
 
 
     def test_upload_rejects_unauthorized_and_server_errors(self):
-        from motocicl.automation.supabase_storage import SupabaseStorageArtifactStore
-
         unauthorized = self.make_store()
         unauthorized._key = "wrong-local-secret"
         with self.assertRaisesRegex(RuntimeError, "HTTP 401"):
