@@ -60,6 +60,10 @@ Before production deployment:
 
 This runtime is a deployable foundation for the currently implemented CI-proposal worker tasks. It is **not** evidence that the complete autonomous engineering cycle is operational.
 
+## Free CI verification boundary — 2026-11-20
+
+The free GitHub Actions job uses a disposable PostgreSQL service and runs the full migration-chain and worker-recovery integration tests. Supabase Storage is additionally exercised through a local HTTP contract emulator in the test suite: it verifies the adapter's real HTTP request/response path, private authenticated download route, headers, content-addressed upload and byte-for-byte round trip without credentials or external services. This emulator is not the Supabase Storage server and does not prove live Supabase compatibility, bucket policy behavior, JWT/service-role permissions, or production networking. No live Supabase database or Storage object is modified by CI. A MinIO S3 endpoint is not a drop-in replacement for the current adapter, which uses Supabase Storage's REST API rather than the S3 API.
+
 ## Recovery and lease audit — 2026-11-19
 
 The current PostgreSQL claim path has durable recovery behavior at the SQL level:
