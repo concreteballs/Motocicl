@@ -100,22 +100,17 @@ class SupabaseStorageHttpContractTests(unittest.TestCase):
         StorageContractHandler.requests_seen = []
 
     def make_store(self):
-        # The production adapter intentionally requires HTTPS. Patch only the
-        # URL-scheme guard for this loopback-only HTTP contract test.
-        from unittest.mock import patch
-        with patch("motocicl.automation.supabase_storage.urllib.parse.urlsplit") as split:
-            real_urlsplit = __import__("urllib.parse", fromlist=["urlsplit"]).urlsplit
-            split.side_effect = real_urlsplit
-            parsed = real_urlsplit(self.base_url)
-            self.assertEqual(parsed.scheme, "http")
-            store = object.__new__(SupabaseStorageArtifactStore)
-            store._base_url = self.base_url
-            store._key = "local-contract-secret"
-            store.bucket = "yj64-private-artifacts"
-            store.timeout_seconds = 3.0
-            store.max_upload_bytes = 1024 * 1024
-            store._opener = __import__("urllib.request", fromlist=["urlopen"]).urlopen
-            return store
+        # The production adapter intentionally requires HTTPS. Construct the
+        # instance directly so only this loopback test uses plain HTTP.
+        from urllib.request import urlopen
+        store = object.__new__(SupabaseStorageArtifactStore)
+        store._base_url = self.base_url
+        store._key = "local-contract-secret"
+        store.bucket = "yj64-private-artifacts"
+        store.timeout_seconds = 3.0
+        store.max_upload_bytes = 1024 * 1024
+        store._opener = urlopen
+        return store
 
     def test_real_http_upload_download_and_idempotent_retry(self):
         store = self.make_store()
