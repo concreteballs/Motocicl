@@ -83,7 +83,7 @@ class StorageContractHandler(BaseHTTPRequestHandler):
             )
         if StorageContractHandler.get_delay_seconds:
             time.sleep(StorageContractHandler.get_delay_seconds)
-        if not key.startswith("yj64-private-artifacts/":
+        if not key.startswith("yj64-private-artifacts/"):
             return self._send(404)
         payload = StorageContractHandler.objects.get(key)
         if payload is None:
